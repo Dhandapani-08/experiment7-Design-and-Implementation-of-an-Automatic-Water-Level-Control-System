@@ -13,6 +13,16 @@ To design and implement a **Water Level Indicator using STM32 Nucleo-L031K6** th
 - Wokwi Simulator
 - Virtual Serial Monitor
 - Connecting wires
+- Personal Computer/Laptop
+
+---
+
+## Software Required
+
+- Wokwi Online Simulator
+- STM32CubeIDE
+- STM32 HAL Library
+- C Programming Language
 
 ---
 
@@ -20,7 +30,7 @@ To design and implement a **Water Level Indicator using STM32 Nucleo-L031K6** th
 
 A **Water Level Indicator** is used to monitor the amount of water present in a tank.
 
-In this experiment, a **potentiometer** is used in Wokwi to simulate the output of a water-level sensor. The potentiometer produces an analog voltage between **0 V and 3.3 V**.
+In this experiment, a **potentiometer** is used in Wokwi to simulate the output of a water-level sensor. The potentiometer produces an analog voltage between **0 V and 3.3 V** depending on its position.
 
 The analog signal is connected to the **PA0 ADC input** of the STM32 Nucleo-L031K6.
 
@@ -29,13 +39,31 @@ The STM32 contains a **12-bit Analog-to-Digital Converter (ADC)**. Therefore, th
 - **0** → Minimum water level
 - **4095** → Maximum water level
 
-The ADC value is converted into a percentage, and the water level is classified as:
+The ADC value is converted into a percentage using:
 
-- **LOW**
-- **MEDIUM**
-- **HIGH**
+`Water Level (%) = (ADC Value × 100) / 4095`
+
+The water level is classified into three categories:
+
+- **LOW** → 0–30%
+- **MEDIUM** → 31–70%
+- **HIGH** → 71–100%
 
 The water-level information is displayed on the **Wokwi Serial Monitor** using UART communication.
+
+---
+
+## Principle of Operation
+
+1. The potentiometer is used to simulate the water-level sensor.
+2. The potentiometer produces an analog voltage between 0 V and 3.3 V.
+3. The analog voltage is applied to the PA0 ADC input of the STM32.
+4. The 12-bit ADC converts the analog voltage into a digital value from 0 to 4095.
+5. The ADC value is converted into water-level percentage.
+6. The percentage is compared with predefined threshold values.
+7. The water level is classified as LOW, MEDIUM, or HIGH.
+8. The ADC value, percentage, and status are transmitted through USART2.
+9. The result is displayed on the Wokwi Serial Monitor.
 
 ---
 
@@ -43,11 +71,30 @@ The water-level information is displayed on the **Wokwi Serial Monitor** using U
 
 | Component | STM32 Pin | Function |
 |---|---|---|
-| Potentiometer SIG | PA0 | ADC input |
-| Potentiometer VCC | 3.3V | Power supply |
+| Potentiometer SIG | PA0 | ADC Input |
+| Potentiometer VCC | 3.3V | Power Supply |
 | Potentiometer GND | GND | Ground |
-| USART2 TX | PA2 | Serial data transmission |
-| USART2 RX | PA15 | Serial data reception |
+| USART2 TX | PA2 | Serial Data Transmission |
+| USART2 RX | PA15 | Serial Data Reception |
+
+---
+
+## STM32 Peripheral Configuration
+
+| Parameter | Configuration |
+|---|---|
+| Microcontroller | STM32 Nucleo-L031K6 |
+| ADC | ADC1 |
+| ADC Input | PA0 |
+| ADC Resolution | 12-bit |
+| ADC Range | 0–4095 |
+| ADC Mode | Single Conversion |
+| UART | USART2 |
+| Baud Rate | 115200 bps |
+| Word Length | 8 Bits |
+| Stop Bits | 1 |
+| Parity | None |
+| UART Mode | TX/RX |
 
 ---
 
@@ -56,27 +103,29 @@ The water-level information is displayed on the **Wokwi Serial Monitor** using U
 ~~~text
        Potentiometer
    (Water Level Sensor)
-          │
-          │ Analog Signal
-          ▼
+          |
+          | Analog Signal
+          v
        PA0 / ADC
-          │
-          ▼
+          |
+          v
 +-----------------------+
 | STM32 Nucleo-L031K6   |
 |                       |
 | ADC Conversion        |
-|        ↓              |
+|        |              |
+|        v              |
 | Water Level %         |
-|        ↓              |
+|        |              |
+|        v              |
 | LOW / MEDIUM / HIGH   |
 +-----------+-----------+
-            │
-            │ USART2
-            ▼
+            |
+            | USART2
+            v
       Serial Monitor
-            │
-            ▼
+            |
+            v
    Water Level Display
 ~~~
 
@@ -84,11 +133,11 @@ The water-level information is displayed on the **Wokwi Serial Monitor** using U
 
 ## Water Level Classification
 
-| Water Level | Percentage | Indication |
-|---|---:|---|
-| Low | 0–30% | LOW |
-| Medium | 31–70% | MEDIUM |
-| High | 71–100% | HIGH |
+| Water Level | Percentage | Approximate ADC Range | Indication |
+|---|---:|---:|---|
+| Low | 0–30% | 0–1229 | LOW |
+| Medium | 31–70% | 1230–2866 | MEDIUM |
+| High | 71–100% | 2867–4095 | HIGH |
 
 ---
 
@@ -97,420 +146,201 @@ The water-level information is displayed on the **Wokwi Serial Monitor** using U
 1. Start the program.
 2. Initialize the STM32 HAL library.
 3. Configure the system clock.
-4. Configure **PA0 as an analog input**.
+4. Configure PA0 as an analog input.
 5. Initialize ADC1.
-6. Initialize USART2 for serial communication.
-7. Read the analog value from the potentiometer.
-8. Convert the ADC reading into water-level percentage.
-9. Compare the percentage with predefined limits.
-10. If the water level is less than or equal to 30%, display **LOW**.
-11. If the water level is between 31% and 70%, display **MEDIUM**.
-12. If the water level is greater than 70%, display **HIGH**.
-13. Display the ADC value, water-level percentage, and status on the Serial Monitor.
-14. Wait for one second.
-15. Repeat continuously.
+6. Configure ADC1 with 12-bit resolution.
+7. Initialize USART2 for serial communication.
+8. Configure USART2 with a baud rate of 115200 bps.
+9. Start the ADC conversion.
+10. Read the ADC value from the potentiometer.
+11. Convert the ADC value into water-level percentage using:
+    `Water Level (%) = (ADC Value × 100) / 4095`
+12. Compare the calculated percentage with the predefined limits.
+13. If the water level is less than or equal to 30%, display **LOW**.
+14. If the water level is between 31% and 70%, display **MEDIUM**.
+15. If the water level is greater than 70%, display **HIGH**.
+16. Transmit the ADC value, water-level percentage, and status through USART2.
+17. Display the result on the Serial Monitor.
+18. Wait for one second.
+19. Repeat the process continuously.
+20. Stop.
 
 ---
-##Program Code
 
-    #include <stdio.h>
-    #include <stdint.h>
-    #include <stm32l0xx_hal.h>
-    
-    /* Built-in LED representing the water pump */
-    #define PUMP_LED_PORT              GPIOB
-    #define PUMP_LED_PIN               GPIO_PIN_3
-    #define PUMP_LED_CLK_ENABLE()      __HAL_RCC_GPIOB_CLK_ENABLE()
-    
-    /* Soil-moisture sensor analog input */
-    #define SOIL_SENSOR_PORT           GPIOA
-    #define SOIL_SENSOR_PIN            GPIO_PIN_0
-    #define SOIL_SENSOR_CHANNEL        ADC_CHANNEL_0
-    
-    /* USART2 virtual COM port pins */
-    #define VCP_TX_PIN                 GPIO_PIN_2
-    #define VCP_RX_PIN                 GPIO_PIN_15
-    
-    /*
-     * Higher ADC value = dry soil
-     * Lower ADC value  = wet soil
-     *
-     * Separate thresholds provide hysteresis and prevent
-     * repeated ON/OFF switching near one threshold.
-     */
-    #define PUMP_ON_THRESHOLD          2800
-    #define PUMP_OFF_THRESHOLD         2200
-    
-    UART_HandleTypeDef huart2;
-    ADC_HandleTypeDef hadc1;
-    
-    void SystemClock_Config(void);
-    static void MX_GPIO_Init(void);
-    static void MX_ADC1_Init(void);
-    static void MX_USART2_UART_Init(void);
-    static uint32_t Read_Soil_Moisture(void);
-    void Error_Handler(void);
-    
-    int main(void)
+## Program
+
+```c
+#include "main.h"
+#include <stdio.h>
+#include <string.h>
+
+ADC_HandleTypeDef hadc1;
+UART_HandleTypeDef huart2;
+
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_USART2_UART_Init(void);
+
+int main(void)
+{
+    uint32_t adc_value;
+    uint32_t water_level;
+    char message[100];
+
+    HAL_Init();
+
+    SystemClock_Config();
+
+    MX_GPIO_Init();
+    MX_ADC1_Init();
+    MX_USART2_UART_Init();
+
+    while (1)
     {
-      uint32_t soilValue;
-      uint32_t moisturePercentage;
-      uint8_t pumpStatus = 0;
-    
-      HAL_Init();
-      SystemClock_Config();
-    
-      MX_GPIO_Init();
-      MX_ADC1_Init();
-      MX_USART2_UART_Init();
-    
-      printf("\r\n====================================\r\n");
-      printf("STM32 Smart Irrigation System\r\n");
-      printf("====================================\r\n");
-      printf("PA0 : Soil-moisture sensor\r\n");
-      printf("PB3 : Pump indicator LED\r\n\r\n");
-    
-      /*
-       * Calibrate the ADC before taking readings.
-       */
-      if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    
-      while (1)
-      {
-        soilValue = Read_Soil_Moisture();
-    
-        /*
-         * Convert ADC value into moisture percentage.
-         *
-         * ADC = 0    means approximately 100% wet.
-         * ADC = 4095 means approximately 0% wet.
-         */
-        moisturePercentage =
-            100U - ((soilValue * 100U) / 4095U);
-    
-        /*
-         * Turn ON the pump when the soil becomes dry.
-         */
-        if ((soilValue >= PUMP_ON_THRESHOLD) && (pumpStatus == 0))
+        /* Start ADC Conversion */
+        HAL_ADC_Start(&hadc1);
+
+        /* Wait for ADC Conversion */
+        HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+        /* Read ADC Value */
+        adc_value = HAL_ADC_GetValue(&hadc1);
+
+        /* Convert ADC Value to Percentage */
+        water_level = (adc_value * 100) / 4095;
+
+        /* Determine Water Level */
+        if (water_level <= 30)
         {
-          pumpStatus = 1;
-    
-          HAL_GPIO_WritePin(
-              PUMP_LED_PORT,
-              PUMP_LED_PIN,
-              GPIO_PIN_SET);
-    
-          printf("Soil is dry: Pump switched ON\r\n");
+            sprintf(message,
+                    "ADC Value: %lu\r\nWater Level: %lu%%\r\nStatus: LOW\r\n\r\n",
+                    adc_value, water_level);
         }
-    
-        /*
-         * Turn OFF the pump when sufficient moisture is reached.
-         */
-        else if ((soilValue <= PUMP_OFF_THRESHOLD) && (pumpStatus == 1))
+        else if (water_level <= 70)
         {
-          pumpStatus = 0;
-    
-          HAL_GPIO_WritePin(
-              PUMP_LED_PORT,
-              PUMP_LED_PIN,
-              GPIO_PIN_RESET);
-    
-          printf("Soil is wet: Pump switched OFF\r\n");
+            sprintf(message,
+                    "ADC Value: %lu\r\nWater Level: %lu%%\r\nStatus: MEDIUM\r\n\r\n",
+                    adc_value, water_level);
         }
-    
-        printf("ADC value: %lu | Moisture: %lu%% | Pump: %s\r\n",
-               (unsigned long)soilValue,
-               (unsigned long)moisturePercentage,
-               pumpStatus ? "ON" : "OFF");
-    
-        printf("------------------------------------\r\n");
-    
+        else
+        {
+            sprintf(message,
+                    "ADC Value: %lu\r\nWater Level: %lu%%\r\nStatus: HIGH\r\n\r\n",
+                    adc_value, water_level);
+        }
+
+        /* Send Result through UART */
+        HAL_UART_Transmit(&huart2,
+                          (uint8_t *)message,
+                          strlen(message),
+                          HAL_MAX_DELAY);
+
+        /* Delay of 1 second */
         HAL_Delay(1000);
-      }
     }
-    
-    /**
-     * Read the soil-moisture sensor through ADC1.
-     */
-    static uint32_t Read_Soil_Moisture(void)
-    {
-      uint32_t adcValue;
-    
-      if (HAL_ADC_Start(&hadc1) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    
-      if (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    
-      adcValue = HAL_ADC_GetValue(&hadc1);
-    
-      HAL_ADC_Stop(&hadc1);
-    
-      return adcValue;
-    }
-    
-    /**
-     * GPIO initialization.
-     */
-    static void MX_GPIO_Init(void)
-    {
-      GPIO_InitTypeDef GPIO_InitStruct = {0};
-    
-      PUMP_LED_CLK_ENABLE();
-      __HAL_RCC_GPIOA_CLK_ENABLE();
-    
-      /*
-       * Configure PB3 as the pump indicator output.
-       */
-      GPIO_InitStruct.Pin = PUMP_LED_PIN;
-      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    
-      HAL_GPIO_Init(PUMP_LED_PORT, &GPIO_InitStruct);
-    
-      /*
-       * Initially keep the pump OFF.
-       */
-      HAL_GPIO_WritePin(
-          PUMP_LED_PORT,
-          PUMP_LED_PIN,
-          GPIO_PIN_RESET);
-    
-      /*
-       * Configure PA0 as an analog input.
-       */
-      GPIO_InitStruct.Pin = SOIL_SENSOR_PIN;
-      GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
-    
-      HAL_GPIO_Init(SOIL_SENSOR_PORT, &GPIO_InitStruct);
-    }
-    
-    /**
-     * ADC1 initialization.
-     */
-    static void MX_ADC1_Init(void)
-    {
-      ADC_ChannelConfTypeDef channelConfig = {0};
-    
-      __HAL_RCC_ADC1_CLK_ENABLE();
-    
-      hadc1.Instance = ADC1;
-      hadc1.Init.OversamplingMode = DISABLE;
-      hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
-      hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-      hadc1.Init.SamplingTime = ADC_SAMPLETIME_39CYCLES_5;
-      hadc1.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
-      hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-      hadc1.Init.ContinuousConvMode = DISABLE;
-      hadc1.Init.DiscontinuousConvMode = DISABLE;
-      hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-      hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-      hadc1.Init.DMAContinuousRequests = DISABLE;
-      hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-      hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-      hadc1.Init.LowPowerAutoWait = DISABLE;
-      hadc1.Init.LowPowerFrequencyMode = DISABLE;
-      hadc1.Init.LowPowerAutoPowerOff = DISABLE;
-    
-      if (HAL_ADC_Init(&hadc1) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    
-      channelConfig.Channel = SOIL_SENSOR_CHANNEL;
-      channelConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
-    
-      if (HAL_ADC_ConfigChannel(&hadc1, &channelConfig) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    }
-    
-    /**
-     * System clock configuration.
-     */
-    void SystemClock_Config(void)
-    {
-      RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-      RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-      RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-    
-      __HAL_PWR_VOLTAGESCALING_CONFIG(
-          PWR_REGULATOR_VOLTAGE_SCALE1);
-    
-      RCC_OscInitStruct.OscillatorType =
-          RCC_OSCILLATORTYPE_HSI;
-    
-      RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-      RCC_OscInitStruct.HSICalibrationValue =
-          RCC_HSICALIBRATION_DEFAULT;
-    
-      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-      RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-      RCC_OscInitStruct.PLL.PLLMUL = RCC_PLLMUL_4;
-      RCC_OscInitStruct.PLL.PLLDIV = RCC_PLLDIV_2;
-    
-      if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    
-      RCC_ClkInitStruct.ClockType =
-          RCC_CLOCKTYPE_HCLK |
-          RCC_CLOCKTYPE_SYSCLK |
-          RCC_CLOCKTYPE_PCLK1 |
-          RCC_CLOCKTYPE_PCLK2;
-    
-      RCC_ClkInitStruct.SYSCLKSource =
-          RCC_SYSCLKSOURCE_PLLCLK;
-    
-      RCC_ClkInitStruct.AHBCLKDivider =
-          RCC_SYSCLK_DIV1;
-    
-      RCC_ClkInitStruct.APB1CLKDivider =
-          RCC_HCLK_DIV1;
-    
-      RCC_ClkInitStruct.APB2CLKDivider =
-          RCC_HCLK_DIV1;
-    
-      if (HAL_RCC_ClockConfig(
-              &RCC_ClkInitStruct,
-              FLASH_LATENCY_1) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    
-      PeriphClkInit.PeriphClockSelection =
-          RCC_PERIPHCLK_USART2;
-    
-      PeriphClkInit.Usart2ClockSelection =
-          RCC_USART2CLKSOURCE_PCLK1;
-    
-      if (HAL_RCCEx_PeriphCLKConfig(
-              &PeriphClkInit) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    }
-    
-    /**
-     * USART2 initialization.
-     */
-    static void MX_USART2_UART_Init(void)
-    {
-      GPIO_InitTypeDef GPIO_InitStruct = {0};
-    
-      __HAL_RCC_GPIOA_CLK_ENABLE();
-      __HAL_RCC_USART2_CLK_ENABLE();
-    
-      /*
-       * PA2  -> USART2_TX
-       * PA15 -> USART2_RX
-       */
-      GPIO_InitStruct.Pin = VCP_TX_PIN | VCP_RX_PIN;
-      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-      GPIO_InitStruct.Alternate = GPIO_AF4_USART2;
-    
-      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
-      huart2.Instance = USART2;
-      huart2.Init.BaudRate = 115200;
-      huart2.Init.WordLength = UART_WORDLENGTH_8B;
-      huart2.Init.StopBits = UART_STOPBITS_1;
-      huart2.Init.Parity = UART_PARITY_NONE;
-      huart2.Init.Mode = UART_MODE_TX_RX;
-      huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-      huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-      huart2.Init.OneBitSampling =
-          UART_ONE_BIT_SAMPLE_DISABLE;
-    
-      huart2.AdvancedInit.AdvFeatureInit =
-          UART_ADVFEATURE_NO_INIT;
-    
-      if (HAL_UART_Init(&huart2) != HAL_OK)
-      {
-        Error_Handler();
-      }
-    }
-    
-    /**
-     * Error handler.
-     */
-    void Error_Handler(void)
-    {
-      HAL_GPIO_WritePin(
-          PUMP_LED_PORT,
-          PUMP_LED_PIN,
-          GPIO_PIN_RESET);
-    
-      while (1)
-      {
-        /* Remain here when an initialization error occurs. */
-      }
-    }
-    
-    /*
-     * Redirect printf() output to USART2.
-     */
-    #define STDOUT_FILENO 1
-    #define STDERR_FILENO 2
-    
-    int _write(int file, uint8_t *ptr, int len)
-    {
-      if ((file == STDOUT_FILENO) ||
-          (file == STDERR_FILENO))
-      {
-        HAL_UART_Transmit(
-            &huart2,
-            ptr,
-            len,
-            HAL_MAX_DELAY);
-    
-        return len;
-      }
-    
-      return -1;
-    } 
+}
 
 
-## Circuit Connections
+/* ADC1 Initialization */
+static void MX_ADC1_Init(void)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
 
-### Potentiometer
+    hadc1.Instance = ADC1;
+    hadc1.Init.OversamplingMode = DISABLE;
+    hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+    hadc1.Init.SamplingTime = ADC_SAMPLETIME_39CYCLES_5;
+    hadc1.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
+    hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    hadc1.Init.ContinuousConvMode = DISABLE;
+    hadc1.Init.DiscontinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+    hadc1.Init.DMAContinuousRequests = DISABLE;
+    hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
 
-| Potentiometer Pin | STM32 Connection |
-|---|---|
-| VCC | 3.3V |
-| GND | GND |
-| SIG / Middle Pin | PA0 |
+    HAL_ADC_Init(&hadc1);
 
----
+    sConfig.Channel = ADC_CHANNEL_0;
+    sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
 
-## Circuit Diagram
+    HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+}
 
-~~~text
+
+/* USART2 Initialization */
+static void MX_USART2_UART_Init(void)
+{
+    huart2.Instance = USART2;
+    huart2.Init.BaudRate = 115200;
+    huart2.Init.WordLength = UART_WORDLENGTH_8B;
+    huart2.Init.StopBits = UART_STOPBITS_1;
+    huart2.Init.Parity = UART_PARITY_NONE;
+    huart2.Init.Mode = UART_MODE_TX_RX;
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+
+    HAL_UART_Init(&huart2);
+}
+
+
+/* GPIO Initialization */
+static void MX_GPIO_Init(void)
+{
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+}
+
+
+/* System Clock Configuration */
+void SystemClock_Config(void)
+{
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+    RCC_OscInitStruct.MSICalibrationValue = 0;
+
+    HAL_RCC_OscConfig(&RCC_OscInitStruct);
+
+    RCC_ClkInitStruct.ClockType =
+        RCC_CLOCKTYPE_HCLK |
+        RCC_CLOCKTYPE_SYSCLK |
+        RCC_CLOCKTYPE_PCLK1;
+
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+
+    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0);
+}
+```
+Circuit Connections
+Potentiometer
+Potentiometer Pin	STM32 Connection
+VCC	3.3V
+GND	GND
+SIG / Middle Pin	PA0
+UART
+UART Signal	STM32 Pin
+TX	PA2
+RX	PA15
+GND	GND
+Circuit Diagram
               Potentiometer
          (Water Level Sensor)
         +--------------------+
 3.3V ---| VCC                |
 GND  ---| GND                |
-        | SIG                 |
-        +--+-----------------+
-           |
-           |
-          PA0
-           |
-           v
+        | SIG                |
+        +----+---------------+
+             |
+             |
+            PA0
+             |
+             v
 +---------------------------+
 | STM32 Nucleo-L031K6       |
 |                           |
@@ -523,75 +353,167 @@ GND  ---| GND                |
               | UART
               v
        Wokwi Serial Monitor
-~~~
+Procedure
+Open the Wokwi Online Simulator.
+Create a new STM32 project.
+Select the STM32 Nucleo-L031K6 board.
+Add a potentiometer to the circuit.
+Connect the potentiometer VCC pin to 3.3V.
+Connect the potentiometer GND pin to GND.
+Connect the potentiometer SIG pin to PA0.
+Configure PA0 as an ADC input.
+Configure ADC1 for 12-bit resolution.
+Configure USART2 for UART communication.
+Set the baud rate to 115200 bps.
+Enter the STM32 HAL program.
+Compile the program.
+Start the Wokwi simulation.
+Open the Serial Monitor.
+Rotate the potentiometer to simulate different water levels.
+Observe the ADC value and water-level percentage.
+Observe the corresponding LOW, MEDIUM, or HIGH status.
+Verify the output using the manual calculations.
+Formula
 
----
+The STM32 ADC has a resolution of 12 bits.
 
-## Procedure
+Therefore:
 
-1. Open **Wokwi**.
-2. Select the **STM32 Nucleo-L031K6** board.
-3. Add a **potentiometer**.
-4. Connect the potentiometer VCC pin to **3.3V**.
-5. Connect the potentiometer GND pin to **GND**.
-6. Connect the potentiometer SIG pin to **PA0**.
-7. Enter the STM32 HAL program.
-8. Compile the program.
-9. Start the simulation.
-10. Open the **Serial Monitor**.
-11. Rotate the potentiometer to simulate different water levels.
-12. Observe the ADC value, water-level percentage, and water-level status.
+Maximum ADC Value = 2^12 - 1
 
----
+Maximum ADC Value = 4095
 
-## Expected Output
+The water-level percentage is calculated as:
 
-### Low Water Level
+Water Level (%) = (ADC Value × 100) / 4095
 
-~~~text
+Manual Calculations
+Case 1: Low Water Level
+
+Given:
+
+ADC Value = 800
+
+Calculation:
+
+Water Level = (800 × 100) / 4095
+
+Water Level = 19.53%
+
+Approximately:
+
+Water Level = 19%
+
+Since:
+
+19% <= 30%
+
+Therefore:
+
+Status = LOW
+
+Case 2: Medium Water Level
+
+Given:
+
+ADC Value = 2200
+
+Calculation:
+
+Water Level = (2200 × 100) / 4095
+
+Water Level = 53.72%
+
+Approximately:
+
+Water Level = 53%
+
+Since:
+
+31% <= 53% <= 70%
+
+Therefore:
+
+Status = MEDIUM
+
+Case 3: High Water Level
+
+Given:
+
+ADC Value = 3500
+
+Calculation:
+
+Water Level = (3500 × 100) / 4095
+
+Water Level = 85.47%
+
+Approximately:
+
+Water Level = 85%
+
+Since:
+
+85% > 70%
+
+Therefore:
+
+Status = HIGH
+
+Expected Output
+Low Water Level
 ADC Value: 800
 Water Level: 19%
 Status: LOW
-~~~
-
-### Medium Water Level
-
-~~~text
+Medium Water Level
 ADC Value: 2200
 Water Level: 53%
 Status: MEDIUM
-~~~
-
-### High Water Level
-
-~~~text
+High Water Level
 ADC Value: 3500
 Water Level: 85%
 Status: HIGH
-~~~
+Output
 
----
+The Wokwi Serial Monitor displays the water-level information continuously.
 
-## Working
+================================
+     WATER LEVEL INDICATOR
+================================
 
-The potentiometer produces an analog voltage that represents the water level in the tank.
+ADC Value: 800
+Water Level: 19%
+Status: LOW
 
-The STM32 reads this analog voltage through the **PA0 ADC input**. Since the ADC has a **12-bit resolution**, the analog signal is converted into a digital value between **0 and 4095**.
+ADC Value: 2200
+Water Level: 53%
+Status: MEDIUM
 
-The ADC value is converted into water-level percentage using:
+ADC Value: 3500
+Water Level: 85%
+Status: HIGH
+Working
 
-`Water Level (%) = (ADC Value × 100) / 4095`
+The potentiometer is used to simulate the water-level sensor. When the potentiometer is rotated, its output voltage changes between approximately 0 V and 3.3 V.
 
-The STM32 then classifies the water level as:
+This voltage is applied to PA0, which is configured as an ADC input of the STM32.
 
-- **0–30% → LOW**
-- **31–70% → MEDIUM**
-- **71–100% → HIGH**
+The 12-bit ADC converts the analog voltage into a digital value between 0 and 4095.
 
-The ADC value, percentage, and water-level status are transmitted through **USART2** and displayed on the **Wokwi Serial Monitor**.
+The STM32 converts this ADC value into a percentage using:
 
----
+Water Level (%) = (ADC Value × 100) / 4095
 
-## Result
+The calculated percentage is then compared with the predefined limits:
 
-Thus, the **Water Level Indicator using STM32 Nucleo-L031K6** was designed and implemented successfully. The water level was measured using the ADC and displayed as **LOW, MEDIUM, or HIGH** on the Wokwi Serial Monitor.
+0–30% → LOW
+31–70% → MEDIUM
+71–100% → HIGH
+
+The ADC value, percentage, and status are transmitted through USART2 and displayed on the Wokwi Serial Monitor.
+
+Thus, rotating the potentiometer simulates an increase or decrease in the water level.
+
+Result
+
+Thus, the Water Level Indicator was successfully designed and implemented using the STM32 Nucleo-L031K6. The analog water-level signal was read through the ADC, converted into a percentage, classified as LOW, MEDIUM, or HIGH, and displayed successfully on the Wokwi Serial Monitor.
