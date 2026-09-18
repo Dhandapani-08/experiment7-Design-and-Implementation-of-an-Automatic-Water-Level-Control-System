@@ -205,6 +205,7 @@ Status: HIGH
 
 ## Working
 
+
 The potentiometer produces an analog voltage that represents the water level in the tank.
 
 The STM32 reads this analog voltage through the **PA0 ADC input**. Since the ADC has a **12-bit resolution**, the analog signal is converted into a digital value between **0 and 4095**.
